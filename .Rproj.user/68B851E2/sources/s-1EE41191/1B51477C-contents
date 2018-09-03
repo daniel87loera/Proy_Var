@@ -1,0 +1,31 @@
+library(e1071)
+library(C50) 
+library(rpart)
+
+ww <- ("C:/Users/V Tibs/Desktop/datos/Datos del Prestamo/Prestamo_Indiv.csv")
+dataset <- read.csv(ww , header = TRUE)
+#colnames(dataset)[16] <- "Status_Prestamo"
+dataset$Status_Prestamo <- factor(dataset$Status_Prestamo)
+dataset[, c(1:15)] <- scale(dataset[, c(1:15)])
+summary(dataset)
+
+library(caTools)
+set.seed(1234)
+split <- sample.split(dataset$Status_Prestamo, SplitRatio = 0.80)
+training_set <- subset(dataset, split == TRUE)
+test_set <- subset(dataset, split == FALSE)
+
+library(caret)
+folds <- createFolds(training_set$Status_Prestamo, k = 10)
+
+# Naive Bayes
+cvNaiveBayes <- lapply(folds, function(x){
+  training_fold <- training_set[-x, ]
+  test_fold <- training_set[x, ]
+  clasificador <- naiveBayes(Status_Prestamo ~ ., data = training_fold)
+  y_pred <- predict(clasificador, newdata = test_fold)
+  cm <- table(test_fold$Status_Prestamo, y_pred)
+  precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
+  return(precision)
+})
+precisionNaiveBayes <- mean(as.numeric(cvNaiveBayes))

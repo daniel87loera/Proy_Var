@@ -1,0 +1,36 @@
+  #LIBRERIAS
+  #------------------------------------------------------------------------------------
+  library(e1071)
+  library(C50) 
+  library(rpart)
+  
+  # LECTOR DE ARCHIVO Y SET
+  #------------------------------------------------------------------------------------
+  ww <- ("C:/Users/V Tibs/Desktop/datos/Datos del Prestamo/Prestamo_Indiv.csv")
+  Prestamos<- read.csv(ww, header = TRUE)
+  #set.seed(200)
+  #Prestamo_indice <- sample(1:nrow(Prestamos), nrow(Prestamos)* 0.7)
+  #Prestamo_entrenamiento <- Prestamos[Prestamo_indices,]
+  #Prestamo_test <- Prestamos[-Prestamo_indices,]
+  
+  #FOLDS
+  #--------------------------------------------------------------------------------------
+  set.seed(1)
+  Folds<- 10            
+  Prestamos$kfold   <- sample(1:Folds, nrow(Prestamos), replace = T)
+  
+  # ITERACION MODELOS Y PREDICCION
+  #--------------------------------------------------------------------------------------
+  Iter   <- data.frame(iteracion = NULL, aciertos = NULL)
+  for (i in 1:Folds)
+  {
+    Test          <- subset(Prestamos, kfold  == i)
+    Entrenamiento <- subset(Prestamos, !kfold == i) 
+    Modelo        <- rpart(Status_Prestamo ~ .,data = Entrenamiento)       
+    Prediccion    <- predict(Modelo, Test, type = "raw")  
+    MC            <- table(Test[, "Status_Prestamo"],Prediccion)           
+    Aciertos      <- MC[1, 1] / (MC[1, 1] + MC[2, 1])
+    Iter          <- rbind(Iter, data.frame(Iter = i, acierto = Aciertos))  
+  }
+  
+  
